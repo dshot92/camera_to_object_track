@@ -9,10 +9,28 @@ bl_info = {
 	"category": "Animation",
 }
 
-class ObjectAnimationOperator(bpy.types.Operator):
+class C2OTBakeCamera(bpy.types.Operator):
 	"""Operator to animate object movements based on reference objects"""
-	bl_idname = "camera_to_object_track.duplicate_and_convert"
-	bl_label = "Duplicate and convert"
+	bl_idname = "c2otd.bake_camera"
+	bl_label = "Bake Track Camera"
+
+	def execute(self, context):
+
+		camera = context.scene.object_picker_1
+		frame_start = context.scene.frame_start
+		frame_end = context.scene.frame_end
+
+		bpy.ops.object.select_all(action='DESELECT')
+		camera.select_set(True)
+
+		bpy.ops.nla.bake(frame_start=frame_start, frame_end=frame_end, step=1, only_selected=True, visual_keying=True, clear_constraints=True, clear_parents=True, use_current_action=True, clean_curves=False, bake_types={'OBJECT'})
+
+		return {'FINISHED'}
+
+class C2OTConvertTrack(bpy.types.Operator):
+	"""Operator to animate object movements based on reference objects"""
+	bl_idname = "c2otd.convert_track"
+	bl_label = "Convert Track"
 
 	def execute(self, context):
 		scene = context.scene
@@ -31,14 +49,16 @@ class ObjectAnimationOperator(bpy.types.Operator):
 			c = a.copy()
 			c.data = a.data.copy()
 			c.name = "Static_" + a.name
-			context.collection.objects.link(c)
+			collection = a.users_collection[0]
+			collection.objects.link(c)
 			c.animation_data_clear()
 
 			# Duplicate Object 2 (Reference points)
 			d = b.copy()
 			d.data = b.data.copy()
+			collection = b.users_collection[0]
+			collection.objects.link(d)
 			d.name = "Static_" + b.name
-			context.collection.objects.link(d)
 
 		# Store the location and rotation of the duplicated objects
 		crfLoc = c.location
@@ -89,13 +109,24 @@ class ObjectAnimationOperator(bpy.types.Operator):
 		a.hide_viewport = True
 		a.hide_set(True)
 		
-		b.hide_render = True
-		b.hide_viewport = True
-		b.hide_set(True)
+		d.hide_render = True
+		d.hide_viewport = True
+		d.hide_set(True)
+
+		# Set Camera as Parent of Points
+		bpy.ops.object.select_all(action='DESELECT') #deselect all object
+
+		c.select_set(True)
+		b.select_set(True)
+
+		# the active object will be the parent of all selected object
+		context.view_layer.objects.active = c
+
+		bpy.ops.object.parent_set(type='OBJECT', xmirror=False, keep_transform=True)
 		
 		return {'FINISHED'}
 
-class ObjectAnimationPanel(bpy.types.Panel):
+class C2OTPanel(bpy.types.Panel):
 	bl_idname = "OBJECT_PT_camera_to_object_track"
 	bl_label = "Cam 2 O-Track"
 	bl_space_type = 'VIEW_3D'
@@ -111,15 +142,21 @@ class ObjectAnimationPanel(bpy.types.Panel):
 		# Object Picker 2: Reference Points
 		layout.prop_search(context.scene, "object_picker_2", bpy.data, "objects", text="Points")
 
-		layout.separator()
+		if context.scene.object_picker_1 is not None:
+			layout.separator()
+			layout.operator("c2otd.bake_camera")
 
-		# Duplicate Button
-		layout.operator("camera_to_object_track.duplicate_and_convert")
+
+		if context.scene.object_picker_1 is not None and context.scene.object_picker_2 is not None:
+			layout.separator()
+			# Duplicate Button
+			layout.operator("c2otd.convert_track")
 
 
 classes = [
-	ObjectAnimationOperator,
-	ObjectAnimationPanel,
+	C2OTConvertTrack,
+	C2OTBakeCamera,
+	C2OTPanel,
 ]
 
 def register():
