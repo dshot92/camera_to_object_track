@@ -3,10 +3,12 @@ import bpy
 bl_info = {
 	"name": "Camera to Object Track",
 	"description": "Automatically animates object movements based on reference objects.",
-	"author": "DShot92",
-	"version": (0, 1, 0),
-	"blender": (2, 80, 0),
+	"author": "DShot92 <dshot92@gmail.com>",
+	"version": (0, 1, 1),
+	"blender": (3, 0, 0),
 	"category": "Animation",
+	"location": "View3D > Tool Shelf > Cam to Obj Track",
+	"tracker_url": "https://github.com/dshot92/camera_to_objec_track",
 }
 
 class C2OTBakeCamera(bpy.types.Operator):
@@ -128,10 +130,10 @@ class C2OTConvertTrack(bpy.types.Operator):
 
 class C2OTPanel(bpy.types.Panel):
 	bl_idname = "OBJECT_PT_camera_to_object_track"
-	bl_label = "Cam 2 O-Track"
+	bl_label = "Camera to Object Track"
 	bl_space_type = 'VIEW_3D'
 	bl_region_type = 'UI'
-	bl_category = 'Cam 2 O-Track'
+	bl_category = 'Cam to Obj Track'
 
 	def draw(self, context):
 		layout = self.layout
